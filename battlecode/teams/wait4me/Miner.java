@@ -7,7 +7,7 @@ import wait4me.Memory;
 import wait4me.RobotPlayer;
 import wait4me.Unit;
 
-// import java.util.*;
+import java.util.*;
 
 /**
  * Miner logic class
@@ -113,9 +113,40 @@ public class Miner {
     {
         MapLocation loc = Unit.rc.getLocation();
 
-        if (Unit.rc.senseOre(loc) > 0.01) {
+        if (Unit.rc.senseOre(loc) > 0.1) {
             Unit.rc.mine();
         } else {
+
+            int[] offsets = { -2, -1, 0, 1, 2};
+            Collections.shuffle(Arrays.asList(offsets));
+
+            MapLocation maxLocation = null;
+
+            double maxOre = Double.MIN_VALUE;
+
+            for (int dy : offsets) {
+                for (int dx : offsets) {
+                    if (dx == 0 && dy == 0) {
+                        continue;
+                    }
+                    MapLocation l = new MapLocation(loc.x + dx, loc.y + dy);
+                    double ore = Unit.rc.senseOre(l);
+                    if (ore > maxOre) {
+                        maxLocation = l;
+                        maxOre = ore;
+                    }
+                }
+            }
+
+            if (maxLocation != null) {
+                Unit.tryMove(loc.directionTo(maxLocation));
+            } else {
+                // int rnd = Common.rand.nextInt(8);
+                // Unit.tryMove(Unit.dirFromInt(rnd));
+                Unit.tryMove(Common.hqLocation.directionTo(loc));
+            }
+
+            /*
             int fate = Common.rand.nextInt(10);
 
             if (fate < 7) {
@@ -124,6 +155,7 @@ public class Miner {
             } else {
                 Unit.tryMove(Unit.rc.senseHQLocation().directionTo(loc));
             }
+            */
         }
     }
 

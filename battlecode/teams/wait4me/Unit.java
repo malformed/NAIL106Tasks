@@ -111,9 +111,10 @@ public class Unit
     {
         MapLocation target = Memory.loadLocation(Common.Address.MOVE_TARGET);
 
-        moveSimple(target);
+        // moveSimple(target);
+        moveBugging(target);
 
-        int proxTrashold = 9;
+        int proxTrashold = 15;
 
         if (rc.getLocation().distanceSquaredTo(target) < proxTrashold) {
             setState(State.WAIT);
@@ -139,8 +140,6 @@ public class Unit
         Direction dir = getDirection();
         boolean bugging = isBugging();
 
-        rc.setIndicatorString(2, "attacking: " + dir.toString());
-
         if (!bugging) {
             dir = rc.getLocation().directionTo(target);
             if (rc.canMove(dir)) {
@@ -161,9 +160,9 @@ public class Unit
             if (rc.canMove(dir)) {
                 rc.move(dir);
             }
-            Direction enemey_dir = rc.getLocation().directionTo(target);
-            if (rc.canMove(enemey_dir)) {
-                dir = enemey_dir;
+            Direction targetDir = rc.getLocation().directionTo(target);
+            if (rc.canMove(targetDir)) {
+                dir = targetDir;
                 bugging = false;
             }
         }

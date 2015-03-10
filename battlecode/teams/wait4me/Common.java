@@ -11,6 +11,8 @@ public class Common {
     static MapLocation hqLocation;
     static MapLocation enemyLocation;
 
+    static int turn;
+
     static class Costs
     {
         // units
@@ -43,6 +45,11 @@ public class Common {
 
         static final int MOVE_TARGET = 40;   // <x,y> ... 40,41
         static final int ATTACK_TARGET = 42; // <x,y> ... 42,43
+        static final int DEFEND_TARGET = 44; // <x,y> ... 42,43
+
+        static final int CURRENT_TURN = 100;
+        static final int DEFEND_ALERT = 101;
+
     }
 
     static class Constants

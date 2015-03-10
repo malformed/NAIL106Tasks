@@ -10,9 +10,6 @@ import wait4me.Unit;
 
 public class RobotPlayer {
 
-    static final int ATTACK_CMD = 100;
-    static final int BACKUP_CMD = 101;
-
     static final int SOLDIER_DIRECTION_MASK = 0x7;
     static final int NEW_SOLDIER_MASK = 0x8;
     static final int SOLDIER_STATE_MASK = 0xF0;
@@ -28,14 +25,6 @@ public class RobotPlayer {
 	static Random rand;
 
 	static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
-
-    /**
-     * unit states:
-     *   (0) undefined - spawned in that state
-     *   (1) wait      - waits on spot
-     *   (2) move      - move to the target stored at MOVE_TARGET
-     *   (3) attack    - attack taget with location at ATTACK_TARGET
-     */
 
 	public static void run(RobotController tomatojuice) {
 		rc = tomatojuice;
@@ -61,17 +50,18 @@ public class RobotPlayer {
 			try {
 				rc.setIndicatorString(0, "robot type: " + rc.getType());
 
-                // attack = Commands.get(ATTACK_CMD);
-                // backup = Commands.get(BACKUP_CMD);
+                Common.turn = Memory.get(Common.Address.CURRENT_TURN);
 
 			} catch (Exception e) {
 				System.out.println("Unexpected exception");
 				e.printStackTrace();
 			}
 
-
 			if (rc.getType() == RobotType.HQ) {
 				try {
+                    // saves order of current turn 
+                    Memory.set(Common.Address.CURRENT_TURN, Common.turn + 1);
+
                     MapLocation rallyPoint = null;
 
 					myRobots = rc.senseNearbyRobots(999999, myTeam);
@@ -92,8 +82,6 @@ public class RobotPlayer {
                         nearestTarget = Common.enemyLocation;
                     }
 
-                    Memory.storeLocation(Common.Address.ATTACK_TARGET, nearestTarget);
-                    rc.setIndicatorDot(nearestTarget, 0, 0, 255);
 
                     // MapLocation loc = rc.senseHQLocation().add(Direction.NORTH,2);
                     // rc.setIndicatorDot(loc, 255, 0, 0);
@@ -113,6 +101,7 @@ public class RobotPlayer {
                     int numSupplies = 0;
 
                     int soldiersWaiting = 0;
+                    int numMilitary = 0;
 
 					for (RobotInfo r : myRobots) {
 						RobotType type = r.type;
@@ -136,6 +125,7 @@ public class RobotPlayer {
                         }
 
 						if (type == RobotType.SOLDIER || type == RobotType.TANK) {
+                            ++numMilitary;
 							if (type == RobotType.SOLDIER) {
                                 ++numSoldiers;
                             } else {
@@ -146,16 +136,6 @@ public class RobotPlayer {
                                 ++soldiersWaiting;
                             }
 
-                            /*
-                            Unit.data = Memory.getRobotData(r.ID);
-                            if (Unit.getState() == Unit.State.UNDEFINED) {
-                                Unit.setState(Unit.State.MOVE);
-                            }
-                            if (Unit.getState() == Unit.State.WAIT) {
-                                ++soldiersWaiting;
-                            }
-                            Memory.setRobotData(r.ID, Unit.data);
-                            */
 						} else if (type == RobotType.BASHER) {
 							numBashers++;
 						} else if (type == RobotType.BEAVER) {
@@ -170,6 +150,7 @@ public class RobotPlayer {
                             int hp = Memory.getRobotData(r.ID);
                             if (hp > r.health) {
                                 rallyPoint = r.location;
+                                System.out.printf("+: %d -: %d\n", hp, (int)r.health);
                             }
                             int dist = r.location.distanceSquaredTo(Common.enemyLocation);
                             if (dist < dist2enemy) {
@@ -177,7 +158,6 @@ public class RobotPlayer {
                                 closest_tower = r.location;
                             }
                             // ++numTowers;
-                            Memory.setRobotData(r.ID, (int)r.health);
                         } else if (type == RobotType.MINERFACTORY) {
                             ++numMinerFactories;
                         } else if (type == RobotType.SUPPLYDEPOT) {
@@ -186,20 +166,25 @@ public class RobotPlayer {
                         Memory.setRobotData(r.ID, Unit.data);
 					}
 
+                    /*
                     if (soldiersWaiting >= SQUAD_SIZE) {
                         for (RobotInfo r : myRobots) {
                             if (r.type == RobotType.SOLDIER || r.type == RobotType.TANK) {
                                 Unit.data = Memory.getRobotData(r.ID);
                                 if (Unit.getState() == Unit.State.WAIT) {
+
+                                    Memory.storeLocation(Common.Address.ATTACK_TARGET,
+                                                         nearestTarget);
+                                    rc.setIndicatorDot(nearestTarget, 0, 0, 255);
+
                                     Unit.setState(Unit.State.ATTACK);
                                 }
                                 Memory.setRobotData(r.ID, Unit.data);
                             }
                         }
                     }
+                    */
 
-                    rc.setIndicatorString(1, "target: " + nearestTarget.toString());
-                    rc.setIndicatorString(2, "waiting: " + Integer.toString(soldiersWaiting));
 
 					Memory.set(Common.Address.NUM_BEAVERS, numBeavers);
 					Memory.set(Common.Address.NUM_SOLDIERS, numSoldiers);
@@ -222,21 +207,46 @@ public class RobotPlayer {
                         rallyPoint = Common.hqLocation;
                     }
 
+                    int da = Memory.get(Common.Address.DEFEND_ALERT);
+                    boolean defenseAlert = da + 100 > Common.turn;
+
+                    if (defenseAlert) {
+                        rallyPoint = Memory.loadLocation(Common.Address.DEFEND_TARGET);
+                    }
+
                     Direction enemyDir = rallyPoint.directionTo(Common.enemyLocation);
                     MapLocation gatherPoint = rallyPoint.add(enemyDir).add(enemyDir);
+
                     Memory.storeLocation(Common.Address.MOVE_TARGET, gatherPoint);
+
                     rc.setIndicatorDot(gatherPoint, 0, 255, 0);
+                    rc.setIndicatorString(1, "gather point: " + gatherPoint.toString() +
+                                             " !!! " + Integer.toString(da) +
+                                             "/" + Integer.toString(Common.turn));
+                    // rc.setIndicatorString(2, "waiting: " + Integer.toString(soldiersWaiting));
+                    rc.setIndicatorString(2, "waiting: " + Integer.toString(soldiersWaiting));
+
+                    for (RobotInfo r : myRobots) {
+                        if (!Common.Helper.isWorker(r)) {
+                            Unit.data = Memory.getRobotData(r.ID);
+                            if (defenseAlert) {
+                                Unit.setState(Unit.State.MOVE);
+                            } else if (soldiersWaiting >= SQUAD_SIZE) {
+
+                                Memory.storeLocation(Common.Address.ATTACK_TARGET,
+                                                     nearestTarget);
+                                rc.setIndicatorDot(nearestTarget, 0, 0, 255);
+
+                                Unit.setState(Unit.State.ATTACK);
+                            }
+                            Memory.setRobotData(r.ID, Unit.data);
+                        }
+                    }
 
 					if (rc.isWeaponReady()) {
 						attackSomething();
 					}
 
-                    /*
-					if (rc.isCoreReady() && rc.getTeamOre() >= 100 &&
-                        fate < Math.pow(1.2,12-numBeavers)*10000) {
-						trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
-					}
-                    */
                     if (numBeavers < 3 && rc.isCoreReady() &&
                         rc.getTeamOre() >= Common.Costs.BEAVER) {
 						trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
@@ -246,7 +256,6 @@ public class RobotPlayer {
                     Memory.set(Common.Address.SUPPLY, supply);
                     /*
                     if (numSoldiers > 40) {
-                        Commands.set(ATTACK_CMD, true);
                     }
                     */
 				} catch (Exception e) {
@@ -266,6 +275,21 @@ public class RobotPlayer {
 				try {
 					if (rc.isWeaponReady()) {
 						attackSomething();
+
+		                RobotInfo[] enemies = rc.senseNearbyRobots(2 * myRange, enemyTeam);
+                        int size = enemies.length;
+
+                        if (size > 1) {
+                            Memory.storeLocation(Common.Address.DEFEND_TARGET,
+                                                 rc.getLocation());
+                            Memory.set(Common.Address.DEFEND_ALERT, Common.turn);
+                            rc.setIndicatorString(2, "DEFEND ALERT turn "
+                                                      + Integer.toString(Common.turn));
+                        }
+
+                        // int hp = Unit.data;// Memory.getRobotData(rc);
+                        rc.setIndicatorString(1, "nearby enemies: " + Integer.toString(size));
+                        // Unit.data = (int)rc.getHealth();
 					}
 				} catch (Exception e) {
 					System.out.println("Tower Exception");
