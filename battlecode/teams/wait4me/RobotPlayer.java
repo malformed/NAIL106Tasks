@@ -330,7 +330,7 @@ public class RobotPlayer {
 						attackSomething();
 					}
 
-                    Miner.process();
+                    Builder.process();
 
 				} catch (Exception e) {
 					System.out.println("Beaver Exception");

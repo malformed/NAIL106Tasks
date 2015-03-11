@@ -14,7 +14,7 @@ import java.util.*;
  */
 public class Miner {
 
-    static final int BEAVER_MINER_MASK = (1 << 16);
+    // static final int BEAVER_MINER_MASK = (1 << 16);
 
     static void process() throws GameActionException
     {
@@ -32,9 +32,6 @@ public class Miner {
                 break;
             case MINE:
                 mine();
-                break;
-            case BUILD:
-                build();
                 break;
             default:
                 break;
@@ -63,49 +60,6 @@ public class Miner {
         if (Unit.rc.getSupplyLevel() < Strategy.SUPPLY_REPLENISH_TRESHOLD &&
                             supplyHQ > Strategy.MIN_HQ_SUPPLY_TO_REPLENISH) {
             Unit.setState(Unit.State.SUPPLY);
-        }
-    }
-
-    static void build() throws GameActionException
-    {
-        int fate = Common.rand.nextInt(1000);
-        int numRax = Memory.get(Common.Address.NUM_BARRACKS);
-        int numFactories = Memory.get(Common.Address.NUM_FACTORIES);
-		int numMiners = Memory.get(Common.Address.NUM_MINERS);
-        int numMinerFactories = Memory.get(Common.Address.NUM_MINERFACTORIES);
-        int numDepots = Memory.get(Common.Address.NUM_SUPPLY_DEPOTS);
-
-        double ore = Unit.rc.getTeamOre();
-
-        if (numMinerFactories < 1 && ore >= Common.Costs.MINER_FACTORY)
-        {
-            RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.MINERFACTORY);
-        }
-        else if (numMinerFactories > 0 && numRax < 1 && ore >= Common.Costs.BARRACKS)
-        {
-            RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.BARRACKS);
-        }
-        else if (numFactories > 1 && numRax < 4 && ore >= Common.Costs.BARRACKS)
-        {
-            // RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.BARRACKS);
-        }
-        else if (numRax > 0 && numFactories < 1 && ore > Common.Costs.FACTORY)
-        {
-            RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.TANKFACTORY);
-        }
-        else if (numRax > 0 && numFactories < 2 && ore > Common.Costs.FACTORY + Common.Costs.TANK)
-        {
-            RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.TANKFACTORY);
-        }
-        else if (numMiners >= 20  && numDepots < 5 && ore >= (Common.Costs.SUPPLY_DEPOT + Common.Costs.TANK))
-        {
-            RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.SUPPLYDEPOT);
-        } else if (fate < 600) {
-            Unit.rc.mine();
-        } else if (fate < 900) {
-            Unit.tryMove(Unit.dirFromInt(Common.rand.nextInt(8)));
-        } else {
-            Unit.tryMove(Unit.rc.senseHQLocation().directionTo(Unit.rc.getLocation()));
         }
     }
 
