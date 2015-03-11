@@ -52,6 +52,8 @@ public class Common {
         static final int DEFEND_TARGET = 44; // <x,y> ... 44,45
         static final int MISSILE_TARGET = 46; // <x,y> ... 46,47
 
+        static final int LEADER_POSITION = 80; // <x,y> ... 80,81
+
         static final int CURRENT_TURN = 100;
 
         static final int DEFEND_ALERT = 101;
@@ -70,6 +72,17 @@ public class Common {
         {
             RobotType type = robotInfo.type;
             return type == RobotType.BEAVER || type == RobotType.MINER;
+        }
+
+        static boolean isArmyUnit(RobotInfo robotInfo)
+        {
+            RobotType type = robotInfo.type;
+            return type == RobotType.SOLDIER ||
+                   type == RobotType.TANK ||
+                   type == RobotType.BASHER ||
+                   type == RobotType.DRONE ||
+                   type == RobotType.COMMANDER ||
+                   type == RobotType.LAUNCHER ;
         }
 
         static Direction randomDirection()

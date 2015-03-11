@@ -1,9 +1,5 @@
 package wait4me;
 
-import java.util.*;
-
-import battlecode.common.*;
-
 public class Strategy
 {
     // supply

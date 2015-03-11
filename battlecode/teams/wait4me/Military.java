@@ -32,6 +32,17 @@ public class Military {
             default:
                 break;
         }
+
+
+        after();
+    }
+
+    static void after() throws GameActionException
+    {
+        if (Unit.isLeader()) {
+            Memory.storeLocation(Common.Address.LEADER_POSITION,
+                                 Unit.rc.getLocation());
+        }
     }
 
     static void defaultAction() throws GameActionException
@@ -41,14 +52,31 @@ public class Military {
 
     static void setLabel()
     {
-        Unit.rc.setIndicatorString(1, "Military unit: " + Unit.rc.getType().toString());
+        String leader = (Unit.isLeader() ? "(leader)" : "(follower)");
+        Unit.rc.setIndicatorString(1, leader);
     }
 
     static void attack() throws GameActionException
     {
-        MapLocation target = Memory.loadLocation(Common.Address.ATTACK_TARGET);
+        boolean regroup = (Common.turn % 3 == 0);
+        if (Unit.isLeader() || !regroup) {
+            MapLocation target = Memory.loadLocation(Common.Address.ATTACK_TARGET);
+            Unit.moveBugging(target);
+        } else {
+            MapLocation leaderLoc = Memory.loadLocation(Common.Address.LEADER_POSITION);
+            Unit.moveBugging(leaderLoc);
 
-        Unit.moveBugging(target);
+            /*
+            MapLocation myLoc = Unit.rc.getLocation();
+            MapLocation leaderLoc = Memory.loadLocation(Common.Address.LEADER_POSITION);
+
+            Direction fromLeader = leaderLoc.directionTo(myLoc);
+            MapLocation target = leaderLoc.add(fromLeader, 3);
+            Direction toTarget = myLoc.directionTo(target);
+
+            Unit.moveSimple(target);
+            */
+        }
     }
 
 }

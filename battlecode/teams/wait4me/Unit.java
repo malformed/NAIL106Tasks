@@ -23,6 +23,7 @@ public class Unit
     static final int SUPPLY_REQUEST_BIT = 0x100;
     static final int SKIP_TURN_BIT = 0x200;
     static final int HALT_ON_WAIT_BIT = 0x400;
+    static final int LEADER_BIT_MASK = 0x800;
 
     static RobotController rc;
     static int data;
@@ -67,13 +68,14 @@ public class Unit
 
     static void setLabel()
     {
-        String state = "state: " + getState().toString();
-        String direction = "direction: " + getDirection().toString();
+        String type = rc.getType().toString();
+        String state = getState().toString();
+        String direction = getDirection().toString();
         String bugging = (isBugging() ? "bugging" : "not bugging");
-        String supplyRequest = (hasSupplyRequest() ? "supply request" : "no request");
+        String supplyRequest = (hasSupplyRequest() ? "supply request" : "no supply request");
         String halt = (haltOnWait() ? "halt" : "don't halt");
-        String label = state + " | " + direction + " | " + bugging + " | " + supplyRequest + 
-                       " | " + halt;
+        String label = type + " | " + state + " | " + direction + " | " + bugging + " | " +
+                       supplyRequest + " | " + halt;
         Unit.rc.setIndicatorString(0, label);
     }
 
@@ -306,6 +308,16 @@ public class Unit
     static void setHaltOnWait(boolean halt)
     {
         data = Memory.setBit(data, HALT_ON_WAIT_BIT, halt);
+    }
+
+    static boolean isLeader()
+    {
+        return Memory.getBit(data, LEADER_BIT_MASK);
+    }
+
+    static void setLeader(boolean leader)
+    {
+        data = Memory.setBit(data, LEADER_BIT_MASK, leader);
     }
 
     static Direction getDirection()

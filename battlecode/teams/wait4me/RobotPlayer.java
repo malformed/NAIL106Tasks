@@ -224,10 +224,14 @@ public class RobotPlayer {
                                              " !!! " + Integer.toString(da) +
                                              "/" + Integer.toString(Common.turn));
                     // rc.setIndicatorString(2, "waiting: " + Integer.toString(soldiersWaiting));
-                    rc.setIndicatorString(2, "waiting: " + Integer.toString(soldiersWaiting));
+                    MapLocation leaderLoc = Memory.loadLocation(Common.Address.LEADER_POSITION);
+                    rc.setIndicatorString(2, "waiting: " + Integer.toString(soldiersWaiting)
+                                             + "leader pos: " + leaderLoc.toString());
+
+                    boolean leaderSet = false;
 
                     for (RobotInfo r : myRobots) {
-                        if (!Common.Helper.isWorker(r)) {
+                        if (Common.Helper.isArmyUnit(r)) {
                             Unit.data = Memory.getRobotData(r.ID);
 
                             if (Unit.getState() == Unit.State.SUPPLY) {
@@ -239,12 +243,22 @@ public class RobotPlayer {
                             } else if (soldiersWaiting >= SQUAD_SIZE ||
                                        (soldiersWaiting + unitsAttacking) >= 3 * SQUAD_SIZE / 2) {
                                 Unit.setState(Unit.State.ATTACK);
+                                if (!leaderSet) {
+                                    Unit.setLeader(true);
+                                    Memory.storeLocation(Common.Address.LEADER_POSITION,
+                                                         r.location);
+                                    leaderSet = true;
+                                } else {
+                                    Unit.setLeader(false);
+                                }
                             } else if (Unit.getState() == Unit.State.ATTACK) {
                                 Unit.setState(Unit.State.MOVE);
                             }
                             Memory.setRobotData(r.ID, Unit.data);
                         }
                     }
+
+                    // @todo check if group has a leader
 
 					if (rc.isWeaponReady()) {
 						attackSomething();
@@ -383,7 +397,7 @@ public class RobotPlayer {
                 try {
 					int numMiners = Memory.get(Common.Address.NUM_MINERS);
 
-                    if (numMiners < 20 && rc.isCoreReady() && rc.getTeamOre() >= Common.Costs.MINER) {
+                    if (numMiners < 25 && rc.isCoreReady() && rc.getTeamOre() >= Common.Costs.MINER) {
                         trySpawn(directions[rand.nextInt(8)], RobotType.MINER);
                     }
                 } catch(GameActionException e) {

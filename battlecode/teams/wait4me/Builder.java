@@ -53,6 +53,7 @@ public class Builder {
         int numAreolabs = Memory.get(Common.Address.NUM_AEROLABS);
 
         double ore = Unit.rc.getTeamOre();
+        MapLocation loc = Unit.rc.getLocation();
 
         if (numMinerFactories < 1 && ore >= Common.Costs.MINER_FACTORY)
         {
@@ -93,6 +94,9 @@ public class Builder {
             Unit.rc.mine();
         } else if (fate < 900) {
             Unit.tryMove(Unit.dirFromInt(Common.rand.nextInt(8)));
+        } else if (loc.distanceSquaredTo(Common.hqLocation) > 100) {
+            Direction dir = loc.directionTo(Common.hqLocation);
+            Unit.tryMove(dir);
         } else {
             Unit.tryMove(Unit.rc.senseHQLocation().directionTo(Unit.rc.getLocation()));
         }
