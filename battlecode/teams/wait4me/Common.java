@@ -64,6 +64,11 @@ public class Common {
             RobotType type = robotInfo.type;
             return type == RobotType.BEAVER || type == RobotType.MINER;
         }
+
+        static Direction randomDirection()
+        {
+            return Direction.values()[Common.rand.nextInt(8)];
+        }
     }
 }
 

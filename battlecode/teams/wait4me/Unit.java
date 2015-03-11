@@ -9,7 +9,7 @@ import wait4me.Memory;
 public class Unit
 {
     enum State {
-        UNDEFINED, WAIT, SUPPLY, MOVE, ATTACK, SCOUT, MINE, BUILD;
+        UNDEFINED, WAIT, SUPPLY, MOVE, ATTACK, SCOUT, MINE, SEARCH_ORE, BUILD;
 
         static State get(int index)
         {
@@ -22,6 +22,7 @@ public class Unit
     static final int STATE_MASK = 0xF0;
     static final int SUPPLY_REQUEST_BIT = 0x100;
     static final int SKIP_TURN_BIT = 0x200;
+    static final int HALT_ON_WAIT_BIT = 0x400;
 
     static RobotController rc;
     static int data;
@@ -66,11 +67,13 @@ public class Unit
 
     static void setLabel()
     {
-        String direction = "direction: " + getDirection().toString();
         String state = "state: " + getState().toString();
-        String bugging = (Unit.isBugging() ? "bugging" : "not bugging");
-        String supplyRequest = (Unit.hasSupplyRequest() ? "supply request" : "no request");
-        String label = direction + " | " + state + " | " + bugging + " | " + supplyRequest;
+        String direction = "direction: " + getDirection().toString();
+        String bugging = (isBugging() ? "bugging" : "not bugging");
+        String supplyRequest = (hasSupplyRequest() ? "supply request" : "no request");
+        String halt = (haltOnWait() ? "halt" : "don't halt");
+        String label = state + " | " + direction + " | " + bugging + " | " + supplyRequest + 
+                       " | " + halt;
         Unit.rc.setIndicatorString(0, label);
     }
 
@@ -79,8 +82,34 @@ public class Unit
     /**
      * units does nothing
      */
-    static void waitAction()
+    static void waitAction() throws GameActionException
     {
+        MapLocation loc = rc.getLocation();
+        if (!haltOnWait()) {
+            MapLocation target = Memory.loadLocation(Common.Address.MOVE_TARGET);
+            if (loc.equals(target)) {
+                // stands right on target
+                setHaltOnWait(true);
+            } else {
+                Direction dir = rc.getLocation().directionTo(target);
+                RobotInfo ri = rc.senseRobotAtLocation(loc.add(dir));
+                if (ri != null) {
+                    int tmp = Unit.data;
+                    Unit.data = Memory.getRobotData(ri.ID);
+                    boolean halt = Unit.haltOnWait();
+                    Unit.data = tmp;
+                    if (halt){
+                        setHaltOnWait(true);
+                    }
+                } else {
+                    if (!tryMove(dir)) {
+                        setHaltOnWait(true);
+                    }
+                }
+
+
+            }
+        }
     }
 
     /**
@@ -93,7 +122,7 @@ public class Unit
             if (dist < Common.Constants.TRANSFER_RADIUS) {
                 setSupplyRequest(true);
             } else {
-                moveSimple(Common.hqLocation);
+                moveBugging(Common.hqLocation);
             }
         } else {
             if (rc.getSupplyLevel() > 0 /* Strategy.SUPPLY_TRANSFER_AMOUNT */) {
@@ -177,7 +206,7 @@ public class Unit
      *
      * @note    taken from ExamplePlayer.java
      */
-	static void tryMove(Direction d) throws GameActionException
+	static boolean tryMove(Direction d) throws GameActionException
     {
 		int offsetIndex = 0;
 		int[] offsets = {0,1,-1,2,-2};
@@ -188,8 +217,13 @@ public class Unit
 		}
 
 		if (offsetIndex < 5) {
-			rc.move(dirFromInt((dirint+offsets[offsetIndex]+8)%8));
+            Direction dir = dirFromInt((dirint+offsets[offsetIndex]+8)%8);
+            if (rc.canMove(dir)) {
+			    rc.move(dir);
+                return true;
+            }
 		}
+        return false;
 	}
 
     // --------------------- utility methods ----------------------------------
@@ -217,6 +251,7 @@ public class Unit
 
     static void setState(int state)
     {
+        onStateTransition();
         data = ((data & ~STATE_MASK) | (state << 4));
     }
 
@@ -250,6 +285,16 @@ public class Unit
         data = Memory.setBit(data, SKIP_TURN_BIT, set);
     }
 
+    static boolean haltOnWait()
+    {
+        return Memory.getBit(data, HALT_ON_WAIT_BIT);
+    }
+
+    static void setHaltOnWait(boolean halt)
+    {
+        data = Memory.setBit(data, HALT_ON_WAIT_BIT, halt);
+    }
+
     static Direction getDirection()
     {
         return dirFromInt(data & DIRECTION_MASK);
@@ -263,6 +308,13 @@ public class Unit
     static Direction dirFromInt(int index)
     {
         return Direction.values()[index];
+    }
+
+    static void onStateTransition()
+    {
+        if (getState() == Unit.State.WAIT) {
+            setHaltOnWait(false);
+        }
     }
 }
 

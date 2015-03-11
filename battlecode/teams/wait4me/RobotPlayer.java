@@ -16,7 +16,7 @@ public class RobotPlayer {
 
     // ......
     
-    static final int SQUAD_SIZE = 20;
+    static final int SQUAD_SIZE = 15;
 
 	static RobotController rc;
 	static Team myTeam;
@@ -42,7 +42,7 @@ public class RobotPlayer {
 
         // boolean attack = false;
         // boolean backup = false;
-
+        //
 		while(true) {
 
             Memory.init(rc);
@@ -101,6 +101,7 @@ public class RobotPlayer {
                     int numSupplies = 0;
 
                     int soldiersWaiting = 0;
+                    int unitsAttacking = 0;
                     int numMilitary = 0;
 
 					for (RobotInfo r : myRobots) {
@@ -135,6 +136,9 @@ public class RobotPlayer {
                             if (Unit.getState() == Unit.State.WAIT) {
                                 ++soldiersWaiting;
                             }
+                            if (Unit.getState() == Unit.State.ATTACK) {
+                                ++unitsAttacking;
+                            }
 
 						} else if (type == RobotType.BASHER) {
 							numBashers++;
@@ -166,26 +170,6 @@ public class RobotPlayer {
                         Memory.setRobotData(r.ID, Unit.data);
 					}
 
-                    /*
-                    if (soldiersWaiting >= SQUAD_SIZE) {
-                        for (RobotInfo r : myRobots) {
-                            if (r.type == RobotType.SOLDIER || r.type == RobotType.TANK) {
-                                Unit.data = Memory.getRobotData(r.ID);
-                                if (Unit.getState() == Unit.State.WAIT) {
-
-                                    Memory.storeLocation(Common.Address.ATTACK_TARGET,
-                                                         nearestTarget);
-                                    rc.setIndicatorDot(nearestTarget, 0, 0, 255);
-
-                                    Unit.setState(Unit.State.ATTACK);
-                                }
-                                Memory.setRobotData(r.ID, Unit.data);
-                            }
-                        }
-                    }
-                    */
-
-
 					Memory.set(Common.Address.NUM_BEAVERS, numBeavers);
 					Memory.set(Common.Address.NUM_SOLDIERS, numSoldiers);
 					Memory.set(Common.Address.NUM_BASHERS, numBashers);
@@ -208,17 +192,22 @@ public class RobotPlayer {
                     }
 
                     int da = Memory.get(Common.Address.DEFEND_ALERT);
-                    boolean defenseAlert = da + 100 > Common.turn;
+                    boolean defenseAlert = (da != 0) && (da + 100 > Common.turn);
 
                     if (defenseAlert) {
                         rallyPoint = Memory.loadLocation(Common.Address.DEFEND_TARGET);
                     }
 
                     Direction enemyDir = rallyPoint.directionTo(Common.enemyLocation);
-                    MapLocation gatherPoint = rallyPoint.add(enemyDir).add(enemyDir);
+                    MapLocation gatherPoint = rallyPoint.add(enemyDir); // .add(enemyDir);
 
                     Memory.storeLocation(Common.Address.MOVE_TARGET, gatherPoint);
 
+
+                    Memory.storeLocation(Common.Address.ATTACK_TARGET,
+                                         nearestTarget);
+                    rc.setIndicatorDot(nearestTarget, 0, 0, 255);
+                                
                     rc.setIndicatorDot(gatherPoint, 0, 255, 0);
                     rc.setIndicatorString(1, "gather point: " + gatherPoint.toString() +
                                              " !!! " + Integer.toString(da) +
@@ -229,15 +218,18 @@ public class RobotPlayer {
                     for (RobotInfo r : myRobots) {
                         if (!Common.Helper.isWorker(r)) {
                             Unit.data = Memory.getRobotData(r.ID);
+
+                            if (Unit.getState() == Unit.State.SUPPLY) {
+                                continue;
+                            }
+
                             if (defenseAlert) {
                                 Unit.setState(Unit.State.MOVE);
-                            } else if (soldiersWaiting >= SQUAD_SIZE) {
-
-                                Memory.storeLocation(Common.Address.ATTACK_TARGET,
-                                                     nearestTarget);
-                                rc.setIndicatorDot(nearestTarget, 0, 0, 255);
-
+                            } else if (soldiersWaiting >= SQUAD_SIZE ||
+                                       (soldiersWaiting + unitsAttacking) >= 3 * SQUAD_SIZE / 2) {
                                 Unit.setState(Unit.State.ATTACK);
+                            } else if (Unit.getState() == Unit.State.ATTACK) {
+                                Unit.setState(Unit.State.MOVE);
                             }
                             Memory.setRobotData(r.ID, Unit.data);
                         }
@@ -355,7 +347,8 @@ public class RobotPlayer {
                         trySpawn(directions[rand.nextInt(8)], RobotType.MINER);
                     }
                 } catch(GameActionException e) {
-					System.out.println("Barracks Exception");
+					System.out.println("MinerFactory Exception");
+                    e.printStackTrace();
                 }
 			}
 

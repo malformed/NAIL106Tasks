@@ -11,6 +11,8 @@ public class Strategy
     
     static final int SUPPLY_REPLENISH_TRESHOLD = 50;
     static final int MIN_HQ_SUPPLY_TO_REPLENISH = 10000;
+
+    static final double MIN_ORE_TO_MINE = 0.5;
 }
 
 

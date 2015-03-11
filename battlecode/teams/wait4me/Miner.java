@@ -4,7 +4,6 @@ import battlecode.common.*;
 
 import wait4me.Common;
 import wait4me.Memory;
-import wait4me.RobotPlayer;
 import wait4me.Unit;
 
 import java.util.*;
@@ -15,6 +14,7 @@ import java.util.*;
 public class Miner {
 
     // static final int BEAVER_MINER_MASK = (1 << 16);
+    static final int TURNS_WITHOUT_ORE_MASK = 0xff0000;
 
     static void process() throws GameActionException
     {
@@ -32,6 +32,9 @@ public class Miner {
                 break;
             case MINE:
                 mine();
+                break;
+            case SEARCH_ORE:
+                searchOre();
                 break;
             default:
                 break;
@@ -67,16 +70,16 @@ public class Miner {
     {
         MapLocation loc = Unit.rc.getLocation();
 
-        if (Unit.rc.senseOre(loc) > 0.1) {
+        if (Unit.rc.senseOre(loc) > Strategy.MIN_ORE_TO_MINE) {
             Unit.rc.mine();
         } else {
 
-            int[] offsets = { -2, -1, 0, 1, 2};
+            Integer[] offsets = new Integer[]{ -2, -1, 0, 1, 2};
             Collections.shuffle(Arrays.asList(offsets));
 
             MapLocation maxLocation = null;
 
-            double maxOre = Double.MIN_VALUE;
+            double maxOre = Unit.rc.senseOre(loc); // Double.MIN_VALUE;
 
             for (int dy : offsets) {
                 for (int dx : offsets) {
@@ -93,23 +96,32 @@ public class Miner {
             }
 
             if (maxLocation != null) {
-                Unit.tryMove(loc.directionTo(maxLocation));
+                Unit.setDirection(loc.directionTo(maxLocation));
             } else {
-                // int rnd = Common.rand.nextInt(8);
-                // Unit.tryMove(Unit.dirFromInt(rnd));
-                Unit.tryMove(Common.hqLocation.directionTo(loc));
+                Unit.setDirection(Common.Helper.randomDirection());
             }
 
-            /*
-            int fate = Common.rand.nextInt(10);
+            Unit.setState(Unit.State.SEARCH_ORE);
+        }
+    }
 
-            if (fate < 7) {
-                int rnd = Common.rand.nextInt(8);
-                Unit.tryMove(Unit.dirFromInt(rnd));
+    static void searchOre() throws GameActionException
+    {
+        MapLocation loc = Unit.rc.getLocation();
+
+        if (Unit.rc.senseOre(loc) > Strategy.MIN_ORE_TO_MINE) {
+            Unit.setState(Unit.State.MINE);
+        } else {
+            Direction dir = Unit.getDirection();
+            Unit.tryMove(dir);
+
+            int noOre = getTurnsWithoutOre();
+            if (noOre > 20) {
+                Unit.setDirection(Common.Helper.randomDirection());
+                setTurnsWithoutOre(0);
             } else {
-                Unit.tryMove(Unit.rc.senseHQLocation().directionTo(loc));
+                setTurnsWithoutOre(noOre + 1);
             }
-            */
         }
     }
 
@@ -120,7 +132,20 @@ public class Miner {
 
     static void setLabel()
     {
-        String label = "worker type: " + (isMiner() ? "miner" : "beaver");
-        Unit.rc.setIndicatorString(1, label);
+        String label1 = "worker type: " + (isMiner() ? "miner" : "beaver");
+        Unit.rc.setIndicatorString(1, label1);
+
+        String label2 = "turns withour ore: " + Integer.toString(getTurnsWithoutOre());
+        Unit.rc.setIndicatorString(2, label2);
+    }
+
+    static int getTurnsWithoutOre()
+    {
+        return (Unit.data & TURNS_WITHOUT_ORE_MASK) >> 16;
+    }
+
+    static void setTurnsWithoutOre(int turns)
+    {
+        Unit.data = ((Unit.data & ~TURNS_WITHOUT_ORE_MASK) | (turns << 16));
     }
 }
