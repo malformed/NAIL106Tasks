@@ -4,6 +4,7 @@ import battlecode.common.*;
 import java.util.*;
 
 import wait4me.Common;
+import wait4me.Launcher;
 import wait4me.Memory;
 import wait4me.Strategy;
 import wait4me.Unit;
@@ -96,7 +97,8 @@ public class RobotPlayer {
 					int numBashers = 0;
 					int numBarracks = 0;
 					int numFactories = 0;
-                    // int numTowers = 0;
+                    int numHelipads = 0;
+                    int numAreolabs = 0;
                     int numMinerFactories = 0;
                     int numSupplies = 0;
 
@@ -111,7 +113,11 @@ public class RobotPlayer {
                         if (Unit.getState() == Unit.State.SUPPLY) {
 
                             if (Unit.hasSupplyRequest()) {
-                                rc.transferSupplies(Strategy.SUPPLY_TRANSFER_AMOUNT, r.location);
+                                int transfer = Strategy.SUPPLY_TRANSFER_AMOUNT;
+                                if (type == RobotType.LAUNCHER) {
+                                    transfer = (int)(rc.getSupplyLevel() / 2);
+                                }
+                                rc.transferSupplies(transfer, r.location);
                             } else if (r.supplyLevel > 0/* Strategy.SUPPLY_TRANSFER_AMOUNT */) {
                                 if (Common.Helper.isWorker(r)) {
                                     if (r.type == RobotType.BEAVER) {
@@ -150,11 +156,14 @@ public class RobotPlayer {
 							numBarracks++;
 						} else if (type == RobotType.TANKFACTORY) {
 							++numFactories;
+						} else if (type == RobotType.HELIPAD) {
+							++numHelipads;
+						} else if (type == RobotType.AEROSPACELAB) {
+							++numAreolabs;
                         } else if (type == RobotType.TOWER) {
                             int hp = Memory.getRobotData(r.ID);
                             if (hp > r.health) {
                                 rallyPoint = r.location;
-                                System.out.printf("+: %d -: %d\n", hp, (int)r.health);
                             }
                             int dist = r.location.distanceSquaredTo(Common.enemyLocation);
                             if (dist < dist2enemy) {
@@ -180,6 +189,8 @@ public class RobotPlayer {
                     Memory.set(Common.Address.NUM_MINERFACTORIES, numMinerFactories);
                     Memory.set(Common.Address.NUM_MINERS, numMiners);
                     Memory.set(Common.Address.NUM_SUPPLY_DEPOTS, numSupplies);
+                    Memory.set(Common.Address.NUM_HELIPADS, numHelipads);
+                    Memory.set(Common.Address.NUM_AEROLABS, numAreolabs);
 
                     if (rallyPoint == null) {
                         rallyPoint = closest_tower;
@@ -199,7 +210,7 @@ public class RobotPlayer {
                     }
 
                     Direction enemyDir = rallyPoint.directionTo(Common.enemyLocation);
-                    MapLocation gatherPoint = rallyPoint.add(enemyDir); // .add(enemyDir);
+                    MapLocation gatherPoint = rallyPoint.add(enemyDir).add(enemyDir);
 
                     Memory.storeLocation(Common.Address.MOVE_TARGET, gatherPoint);
 
@@ -277,6 +288,7 @@ public class RobotPlayer {
                             Memory.set(Common.Address.DEFEND_ALERT, Common.turn);
                             rc.setIndicatorString(2, "DEFEND ALERT turn "
                                                       + Integer.toString(Common.turn));
+
                         }
 
                         // int hp = Unit.data;// Memory.getRobotData(rc);
@@ -312,6 +324,34 @@ public class RobotPlayer {
                     Military.process();
                 } catch (GameActionException e) {
 					System.out.println("Soldier exception");
+                    e.printStackTrace();
+                }
+			}
+
+			if (rc.getType() == RobotType.LAUNCHER) {
+				try {
+                    Launcher.process();
+                } catch (GameActionException e) {
+					System.out.println("Launecher exception");
+                    e.printStackTrace();
+                }
+			}
+
+			if (rc.getType() == RobotType.MISSILE) {
+				try {
+                    // Launcher.process();
+                    if (rc.isCoreReady()) {
+                        MapLocation target = Memory.loadLocation(Common.Address.MISSILE_TARGET);
+                        Unit.tryMove(rc.getLocation().directionTo(target));
+                        rc.setIndicatorString(2, "target: " + target.toString());
+
+                        RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
+                        if (enemies.length > 2) {
+                            rc.explode();
+                        }
+                    }
+                } catch (GameActionException e) {
+					System.out.println("Launecher exception");
                     e.printStackTrace();
                 }
 			}
@@ -377,8 +417,20 @@ public class RobotPlayer {
                 }
 			}
 
+			if (rc.getType() == RobotType.AEROSPACELAB) {
+                try {
+                    if (rc.isCoreReady() && rc.getTeamOre() >= Common.Costs.LAUNCHER) {
+                        trySpawn(directions[rand.nextInt(8)],RobotType.LAUNCHER);
+                    }
+                } catch(GameActionException e) {
+					System.out.println("Aerelab Exception");
+                }
+            }
+
             try {
-                Unit.done();
+                if (rc.getType() != RobotType.MISSILE) {
+                    Unit.done();
+                }
             } catch (GameActionException e) {
 				System.out.println("Unit::done Exception");
 				e.printStackTrace();

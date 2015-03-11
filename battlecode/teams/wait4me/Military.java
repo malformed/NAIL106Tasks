@@ -26,6 +26,9 @@ public class Military {
             case UNDEFINED:
                 defaultAction();
                 break;
+            case ATTACK:
+                attack();
+                break;
             default:
                 break;
         }
@@ -41,5 +44,11 @@ public class Military {
         Unit.rc.setIndicatorString(1, "Military unit: " + Unit.rc.getType().toString());
     }
 
+    static void attack() throws GameActionException
+    {
+        MapLocation target = Memory.loadLocation(Common.Address.ATTACK_TARGET);
+
+        Unit.moveBugging(target);
+    }
 
 }

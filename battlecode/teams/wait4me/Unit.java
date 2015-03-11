@@ -54,14 +54,14 @@ public class Unit
             case MOVE:
                 move();
                 break;
-            case ATTACK:
-                attack();
-                break;
             case SCOUT:
                 break;
             default:
                 processed = false;
         }
+
+        senseEnemy();
+
         return processed;
     }
 
@@ -78,6 +78,26 @@ public class Unit
     }
 
     // --------------------- common state actions -----------------------------
+    //
+    static void senseEnemy() throws GameActionException
+    {
+        if (Common.rand.nextInt(10) > 3) {
+            return;
+        }
+
+        RobotInfo[] enemies = rc.senseNearbyRobots(4 * Unit.rc.getType().attackRadiusSquared,
+                                                   rc.getTeam().opponent());
+        int size = enemies.length;
+
+        if (size > 1) {
+            // lauch target
+            MapLocation enemy = enemies[0].location;
+            Memory.storeLocation(Common.Address.MISSILE_TARGET, enemy);
+            Memory.set(Common.Address.MISSILE_TARGET_TIME, Common.turn);
+            // rc.setIndicatorDot(enemy, 255, 0, 0);
+            // System.out.println("enemy: " + enemy.toString());
+        }
+    }
 
     /**
      * units does nothing
@@ -148,13 +168,6 @@ public class Unit
         if (rc.getLocation().distanceSquaredTo(target) < proxTrashold) {
             setState(State.WAIT);
         }
-    }
-
-    static void attack() throws GameActionException
-    {
-        MapLocation target = Memory.loadLocation(Common.Address.ATTACK_TARGET);
-
-        moveBugging(target);
     }
 
     // --------------------- auxiliary methods --------------------------------

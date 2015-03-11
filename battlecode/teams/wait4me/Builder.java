@@ -46,8 +46,11 @@ public class Builder {
         int numRax = Memory.get(Common.Address.NUM_BARRACKS);
         int numFactories = Memory.get(Common.Address.NUM_FACTORIES);
 		int numMiners = Memory.get(Common.Address.NUM_MINERS);
+		int numLaunchers = Memory.get(Common.Address.NUM_LAUNCHERS);
         int numMinerFactories = Memory.get(Common.Address.NUM_MINERFACTORIES);
         int numDepots = Memory.get(Common.Address.NUM_SUPPLY_DEPOTS);
+        int numHelipads = Memory.get(Common.Address.NUM_HELIPADS);
+        int numAreolabs = Memory.get(Common.Address.NUM_AEROLABS);
 
         double ore = Unit.rc.getTeamOre();
 
@@ -63,18 +66,30 @@ public class Builder {
         {
             // RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.BARRACKS);
         }
-        else if (numRax > 0 && numFactories < 1 && ore > Common.Costs.FACTORY)
+        else if (numRax > 0 && numFactories < 1 && numAreolabs > 0 &&
+                 numLaunchers > 0 && ore > Common.Costs.FACTORY)
         {
             RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.TANKFACTORY);
         }
-        else if (numRax > 0 && numFactories < 2 && ore > Common.Costs.FACTORY + Common.Costs.TANK)
+        else if (numRax > 0 && numFactories < 2 &&
+                 numAreolabs > 0 && 
+                 ore > Common.Costs.FACTORY + Common.Costs.TANK)
         {
             RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.TANKFACTORY);
+        }
+        else if (numRax > 0 && numHelipads < 1 && Unit.rc.hasBuildRequirements(RobotType.HELIPAD))
+        {
+            RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.HELIPAD);
+        }
+        else if (numAreolabs < 1 && Unit.rc.hasBuildRequirements(RobotType.AEROSPACELAB))
+        {
+            RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.AEROSPACELAB);
         }
         else if (numMiners >= 20  && numDepots < 5 && ore >= (Common.Costs.SUPPLY_DEPOT + Common.Costs.TANK))
         {
             RobotPlayer.tryBuild(Unit.dirFromInt(Common.rand.nextInt(8)), RobotType.SUPPLYDEPOT);
-        } else if (fate < 600) {
+        }
+        else if (fate < 600) {
             Unit.rc.mine();
         } else if (fate < 900) {
             Unit.tryMove(Unit.dirFromInt(Common.rand.nextInt(8)));
