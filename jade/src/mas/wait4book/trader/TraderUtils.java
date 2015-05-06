@@ -1,18 +1,23 @@
 package mas.wait4book.trader;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Set;
 
+import mas.wait4book.Constants;
 import mas.wait4book.onto.*;
 
 public class TraderUtils {
 
     private ArrayList<BookInfo> books;
     private ArrayList<Goal> goal;
-
+    
     private BuyerLogic buyer;
+
+    private boolean sell_goal_books = true;
 
     public Random rnd = new Random();
 
@@ -22,6 +27,11 @@ public class TraderUtils {
         goal = myGoal;
 
         buyer = new BuyerLogic(this);
+    }
+
+    public void dontSellGoalBooks()
+    {
+        sell_goal_books = false;
     }
 
     public BuyerLogic buyer()
@@ -47,8 +57,38 @@ public class TraderUtils {
         return book_set;
     }
 
+    public boolean isMyGoal(String book_name)
+    {
+        for (Goal g : goal) {
+            if (g.getBook().getBookName().equals(book_name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public double otherBookValue(String book_name)
+    {
+        double othe_book_value_modifier = 0.6;
+        return Constants.getPrice(book_name) * othe_book_value_modifier;
+    }
+
+    public double goalBookValue(String book_name)
+    {
+        for (Goal g : goal) {
+            if (g.getBook().getBookName().equals(book_name)) {
+                return g.getValue();
+            }
+        }
+        return Double.NaN;
+    }
+
     public boolean canSpare(BookInfo book)
     {
+        if (sell_goal_books) {
+            return true;
+        }
+
         boolean is_goal = false;
         for (Goal g : goal) {
             if(g.getBook().getBookName().equals(book.getBookName())) {
@@ -57,13 +97,13 @@ public class TraderUtils {
             }
         }
 
-        System.out.printf("request for %s", book.getBookName());
+        // System.out.printf("request for %s ", book.getBookName());
         // it is safe to sell if book isn't a goal
         if (!is_goal) {
-            System.out.println("safe-to-sell");
+            // System.out.println("safe-to-sell");
             return true;
         } else {
-            System.out.println("is-in-my goal list");
+            // System.out.println("is-in-my goal list");
         }
 
         // otherwise check whether we have at least two

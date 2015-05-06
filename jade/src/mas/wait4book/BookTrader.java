@@ -26,13 +26,6 @@ import mas.wait4book.trader.TraderUtils;
 
 import java.util.*;
 
-/**
- * Created by Martin Pilat on 16.4.14.
- *
- * Jednoducha (testovaci) verze obchodujiciho agenta. Agent neobchoduje nijak rozumne, stara se pouze o to, aby
- * nenabizel knihy, ktere nema. (Ale stejne se muze stat, ze obcas nejakou knihu zkusi prodat dvakrat, kdyz o ni pozadaji
- * dva agenti rychle po sobe.)
- */
 public class BookTrader extends Agent {
 
     Codec codec = new SLCodec();
@@ -141,6 +134,8 @@ public class BookTrader extends Agent {
                     //pridame chovani, ktere se stara o prodej knih
                     addBehaviour(new SellBook(myAgent, MessageTemplate.MatchPerformative(ACLMessage.CFP)));
 
+                    addBehaviour(new GatherGoalBooksToggleBehaviour(myAgent, 1000 * 120));
+
                     //odpovime, ze budeme obchodovat (ta zprava se v prostredi ignoruje, ale je slusne ji poslat)
                     ACLMessage reply = request.createReply();
                     reply.setPerformative(ACLMessage.INFORM);
@@ -158,6 +153,19 @@ public class BookTrader extends Agent {
             }
 
             return super.handleRequest(request);
+        }
+
+        class GatherGoalBooksToggleBehaviour extends TickerBehaviour {
+
+
+            public GatherGoalBooksToggleBehaviour(Agent a, long period) {
+                super(a, period);
+            }
+
+            @Override
+            protected void onTick() {
+                traderUtils.dontSellGoalBooks();
+            }
         }
 
         class TradingBehaviour extends TickerBehaviour {
@@ -296,6 +304,7 @@ public class BookTrader extends Agent {
                 boolean accepted = false;
                 while (it.hasNext()) {
                     ACLMessage response = (ACLMessage)it.next();
+                    // response.getCon
 
                     ContentElement ce = null;
                     try {
@@ -350,9 +359,24 @@ public class BookTrader extends Agent {
                         acc.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                         accepted = true;
 
+                        Offer chosen_offer = null;
+                        double min_value = Double.MAX_VALUE;
+                        for (Offer offer : canFulfill) {
+                            double val = traderUtils.buyer().evaluateOffer(offer);
+                            if (val < min_value) {
+                                min_value = val;
+                                chosen_offer = offer;
+                            }
+                        }
+
+                        if (chosen_offer == null) {
+                            continue;
+                        }
+
                         //vybereme nabidku
                         Chosen ch = new Chosen();
-                        ch.setOffer(canFulfill.get(rnd.nextInt(canFulfill.size())));
+                        // ch.setOffer(canFulfill.get(rnd.nextInt(canFulfill.size())));
+                        ch.setOffer(chosen_offer);
 
                         c=ch;
                         shouldReceive = cf.getWillSell();
