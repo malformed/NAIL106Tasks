@@ -1,4 +1,4 @@
-package mas.simAnn.onto;
+package mas.simann.onto;
 
 import jade.content.onto.BeanOntology;
 import jade.content.onto.BeanOntologyException;
@@ -14,7 +14,7 @@ public class BookOntology extends BeanOntology {
         super("book-ontology");
 
         try {
-            add("mas.cv4.onto");
+            add("mas.simann.onto");
         }
         catch (BeanOntologyException be) {
             be.printStackTrace();

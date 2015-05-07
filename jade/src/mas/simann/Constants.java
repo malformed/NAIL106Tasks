@@ -1,4 +1,4 @@
-package mas.simAnn;
+package mas.simann;
 
 import java.util.HashMap;
 import java.util.Set;

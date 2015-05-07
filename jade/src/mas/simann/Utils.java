@@ -1,8 +1,8 @@
-package mas.simAnn;
+package mas.simann;
 
-import mas.simAnn.onto.AgentInfo;
-import mas.simAnn.onto.BookInfo;
-import mas.simAnn.onto.Goal;
+import mas.simann.onto.AgentInfo;
+import mas.simann.onto.BookInfo;
+import mas.simann.onto.Goal;
 
 import java.util.ArrayList;
 

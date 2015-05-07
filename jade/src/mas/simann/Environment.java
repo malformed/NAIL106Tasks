@@ -1,4 +1,4 @@
-package mas.simAnn;
+package mas.simann;
 
 import jade.content.ContentElement;
 import jade.content.lang.Codec;
@@ -18,7 +18,7 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
-import mas.simAnn.onto.*;
+import mas.simann.onto.*;
 
 import java.io.IOException;
 import java.util.*;

@@ -1,4 +1,4 @@
-package mas.simAnn.onto;
+package mas.simann.onto;
 
 import jade.content.Predicate;
 import jade.content.onto.annotations.AggregateSlot;

@@ -1,4 +1,4 @@
-package mas.simAnn;
+package mas.simann;
 
 import jade.content.ContentElement;
 import jade.content.lang.Codec;
@@ -41,17 +41,17 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import mas.simAnn.onto.AgentInfo;
-import mas.simAnn.onto.BookInfo;
-import mas.simAnn.onto.BookOntology;
-import mas.simAnn.onto.ChooseFrom;
-import mas.simAnn.onto.Chosen;
-import mas.simAnn.onto.GetMyInfo;
-import mas.simAnn.onto.Goal;
-import mas.simAnn.onto.MakeTransaction;
-import mas.simAnn.onto.Offer;
-import mas.simAnn.onto.SellMeBooks;
-import mas.simAnn.onto.StartTrading;
+import mas.simann.onto.AgentInfo;
+import mas.simann.onto.BookInfo;
+import mas.simann.onto.BookOntology;
+import mas.simann.onto.ChooseFrom;
+import mas.simann.onto.Chosen;
+import mas.simann.onto.GetMyInfo;
+import mas.simann.onto.Goal;
+import mas.simann.onto.MakeTransaction;
+import mas.simann.onto.Offer;
+import mas.simann.onto.SellMeBooks;
+import mas.simann.onto.StartTrading;
 
 /**
  * Created by Martin Pilat on 16.4.14.

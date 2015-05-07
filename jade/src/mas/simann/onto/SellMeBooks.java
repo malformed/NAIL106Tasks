@@ -1,4 +1,4 @@
-package mas.simAnn.onto;
+package mas.simann.onto;
 
 import jade.content.AgentAction;
 import jade.content.onto.annotations.Slot;
