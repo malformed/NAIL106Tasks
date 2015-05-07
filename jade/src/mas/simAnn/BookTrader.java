@@ -288,8 +288,6 @@ public class BookTrader extends Agent {
                     	
                     }
                     
-//                    bi.setBookName(myGoal.get(rnd.nextInt(myGoal.size())).getBook().getBookName());
-                    
                     if (goal1 != null) {
                     	BookInfo bookInfo1 = new BookInfo();
                     	bookInfo1.setBookName(goal1.getBook().getBookName());
@@ -301,10 +299,6 @@ public class BookTrader extends Agent {
                     	bis.add(bookInfo2);
                     }
 
-                    
-//                    String report = getLocalName() + "SellMeBooks " + (goal1 == null ? "---" : goal1.getBook().getBookName()) + " ...  " + (goal2 == null ? "---" : goal2.getBook().getBookName());
-//                    logger.info(report);
-                    
                     
                     SellMeBooks smb = new SellMeBooks();
                     smb.setBooks(bis);
@@ -408,9 +402,6 @@ public class BookTrader extends Agent {
                             continue;
                         }
 
-                        
-//                      System.out.println(response.toString());
-                        
                         ce = getContentManager().extractContent(response);
 
                         ChooseFrom cf = (ChooseFrom)ce;
@@ -448,19 +439,10 @@ public class BookTrader extends Agent {
 
                         //kdyz zadnou, tak odmitneme, stejne tak, kdyz uz jsme nejakou prijali
                         if (canFulfill.size() == 0) {
-//                            ACLMessage acc = response.createReply();
-//                            acc.setPerformative(ACLMessage.REJECT_PROPOSAL);
-//                            acceptances.add(acc);
                             continue;
                         }
 
                         
-                        
-                        
-//                        ACLMessage acc = response.createReply();
-//                        acc.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-//                        accepted = true;
-
                         //vybereme nabidku
                         shouldReceive = cf.getWillSell();
                         Chosen ch = new Chosen();
@@ -468,23 +450,16 @@ public class BookTrader extends Agent {
                         Double profits = 0d;
                         for (BookInfo book : shouldReceive) {
                         	profits += getPredictedPrice(book, true);
-//                        	System.out.println(book.getBookName());
                         }
                         
                         for (Offer offer : canFulfill) {
                         	Double utility = profits.doubleValue();
-//                        	System.out.println(this.getAgent().getLocalName());
-//                        	System.out.println("\t   " + profits);
                         	
                         	utility -= offer.getMoney();
                         	if (offer.getBooks() != null)
 	                        	for (BookInfo book : offer.getBooks()) {
 	                        		utility -= getPredictedPrice(book);
 	                        	}
-                        	
-                        	
-//                        	System.out.println("\t    " + offer.getMoney());
-//                        	System.out.println("utility" + utility + " " + shouldReceive.size());
                         	
                         	if (utility > bestUtility) {
                         		bestUtility = utility;
@@ -493,52 +468,6 @@ public class BookTrader extends Agent {
                         	}
                         }
  
-////                        Double willReceive = 0;
-//                        
-////                        for (BookInfo book : shouldReceive)
-////	                        for (Goal goal : myGoal) {
-////	                        	if (goal.getBook().getBookName().equals(book.getBookName())) {
-////	                        		willReceive += goal.getValue();
-////	                        	}
-////	                        }
-//                        
-//                        double willLose =  - c.getOffer().getMoney();
-//                        if (c.getOffer().getBooks() != null) {
-//	                        for (BookInfo bookInfo : c.getOffer().getBooks()) {
-//	                        	willLose -= getPredictedPrice(bookInfo);
-//	                        }
-//                        }
-//                        
-//                        for (Offer offer : canFulfill) {
-//                        	double willGet = 0;
-//                        	
-//                        	if (offer.getBooks() != null) {
-//                        		for (BookInfo bookInfo : offer.getBooks()) {
-//                        			willGet += getPredictedPrice(bookInfo, true);
-//                        		}
-//                        	}
-//                        	double utility = willReceive - willLose;
-//                        	
-//                        	if (utility > bestUtility) {
-//                        		bestOffer = offer;
-//                        		bestUtility = utility;
-//                        	}
-//                        }
-                        
-                        
-                        
-                        
-                        
-                        
-//                        ch.setOffer(canFulfill.get(rnd.nextInt(canFulfill.size())));
-                        
-//                        if (bestUtility > 0)
-//                        	ch.setOffer(bestOffer);
-                        
-//                        c=ch;
-
-//                        getContentManager().fillContent(acc, ch);
-//                        acceptances.add(acc);
 
                     } catch (Codec.CodecException e) {
                         e.printStackTrace();
@@ -672,24 +601,6 @@ public class BookTrader extends Agent {
 							offers.add(o);
 						}
                     }
-//                    System.out.println(this.getAgent().getName() + "  I will try to get:" );
-//                    for (Offer o : offers) {
-//                    	if (o.getBooks()!= null)
-//	                    	for (BookInfo book : o.getBooks()) {
-//	                    		System.out.println("\t  " + book.getBookName());
-//	                    	}
-//                    	System.out.println("money -> " + o.getMoney());
-//                    	System.out.println();
-//                    }
-//                    ArrayList<BookInfo> bis = new ArrayList<BookInfo>();
-//                    bis.add(myGoal.get(rnd.nextInt(myGoal.size())).getBook());
-
-//                    Offer o2 = new Offer();
-//                    o2.setBooks(bis);
-//                    o2.setMoney(20);
-//
-//                    offers.add(o1);
-//                    offers.add(o2);
 
                     ChooseFrom cf = new ChooseFrom();
 
@@ -702,8 +613,6 @@ public class BookTrader extends Agent {
                     reply.setReplyByDate(new Date(System.currentTimeMillis() + 5000));
                     getContentManager().fillContent(reply, cf);
 
-//                    System.out.println("nabidka:");
-//                    System.out.println(reply);
                     
                     return reply;
                 } catch (UngroundedException e) {
@@ -845,24 +754,30 @@ public class BookTrader extends Agent {
     private double getPredictedPrice(BookInfo book) {
     	return getPredictedPrice(book, false);
     }
-    
+
+    /**
+     * Tries to guess the most probable price of a book on the market
+     * @param book
+     * @param buying - if <code>true</code> then price should be evaluated lower
+     * @return guessed price of a book
+     */
     private double getPredictedPrice(BookInfo book, boolean buying) {
-        double scale = ( Math.log(annealingParameter/1)/Math.log(2) ) + 5;
-//        scale /= 2;
+
+    	//formula for simulated annealing
+    	double scale = ( Math.log(annealingParameter/1)/Math.log(2) ) + 5;
         scale = Math.max(scale, 0.001);
         scale *= buying ? 1 : 0.5;
 
-    	
+    	// is book in demand?
     	Double price = demands.get(book);
     	
     	price = price == null ? 0 : price;
     	
     	price += buying ? 0 : 1;
     	
-//    	System.out.println(price);
-//    	System.out.println(scale);
     	price *= scale * 50;
     	
+    	//is it my goal? => dont sell it cheap!
     	for (Goal goal : myGoal) { 
     		if (book.getBookName().equals(goal.getBook().getBookName())) {
     			price = Math.max(price, goal.getValue());
@@ -875,6 +790,10 @@ public class BookTrader extends Agent {
     	return price;
     }
     
+    /**
+     * Gets list of set(GOALS) - set(BOOKS)
+     * @return
+     */
     private List<Goal> getUnmetGoals() {
     	List<Goal> unmetGoals = new ArrayList<Goal>();
     	for (Goal goal : myGoal) {
