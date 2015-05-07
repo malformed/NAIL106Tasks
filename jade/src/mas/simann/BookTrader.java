@@ -256,36 +256,38 @@ public class BookTrader extends Agent {
                     //pick two random books from our goals as to not to raise suspicion among other agents
                     // pick them based on their relative values
                     Goal goal1 = null, goal2 = null;
-                    while (goal1 == null || goal2 == null) {
-                    	if (goal1 != null) {
-                    		if (unmetGoals.size() < 2)
-                    			break;
-                    	}
-                    	
-//                    	logger.log(Level.INFO, "{0} : valuesSum {1} {2} {3}", new Object[]{this.getAgent().getName(), valuesSum, goal1, myGoal.size()});
-                    	
-                    	int randomValue = rnd.nextInt((int)valuesSum);
-                    		
-//                    	logger.log(Level.INFO, "random Value {0}", randomValue);
-                    	
-                    	int lowerBound = 0, upperBound = 0;
-                    	for (Goal goal : myGoal) {
-                    		if (goal1 == goal)
-                    			continue;
-                   			upperBound += goal.getValue();
-                    		
-                    		if (upperBound >= randomValue && lowerBound < randomValue) {
-                    			if (goal1 == null) {
-                    				goal1 = goal;
-                    				valuesSum -= goal1.getValue();
-                    			} else if (!goal.getBook().getBookName().equals(goal1.getBook().getBookName()) ) {
-                    				goal2 = goal;
-                    			}
-                    		}
-                    		lowerBound = upperBound;
-                    		
-                    	}
-                    	
+                    if (unmetGoals.size() > 0) {
+	                    while (goal1 == null || goal2 == null) {
+	                    	if (goal1 != null) {
+	                    		if (unmetGoals.size() < 2)
+	                    			break;
+	                    	}
+	                    	
+	//                    	logger.log(Level.INFO, "{0} : valuesSum {1} {2} {3}", new Object[]{this.getAgent().getName(), valuesSum, goal1, myGoal.size()});
+	                    	
+	                    	int randomValue = rnd.nextInt((int)valuesSum);
+	                    		
+	//                    	logger.log(Level.INFO, "random Value {0}", randomValue);
+	                    	
+	                    	int lowerBound = 0, upperBound = 0;
+	                    	for (Goal goal : myGoal) {
+	                    		if (goal1 == goal)
+	                    			continue;
+	                   			upperBound += goal.getValue();
+	                    		
+	                    		if (upperBound >= randomValue && lowerBound < randomValue) {
+	                    			if (goal1 == null) {
+	                    				goal1 = goal;
+	                    				valuesSum -= goal1.getValue();
+	                    			} else if (!goal.getBook().getBookName().equals(goal1.getBook().getBookName()) ) {
+	                    				goal2 = goal;
+	                    			}
+	                    		}
+	                    		lowerBound = upperBound;
+	                    		
+	                    	}
+	                    	
+	                    }
                     }
                     
                     if (goal1 != null) {
