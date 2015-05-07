@@ -18,6 +18,7 @@ import jade.domain.FIPAService;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.*;
+
 import mas.wait4me.onto.*;
 
 import java.util.*;
@@ -154,13 +155,10 @@ public class BookTrader extends Agent {
 
         class TradingBehaviour extends TickerBehaviour {
 
-
-            public TradingBehaviour(Agent a, long period) {
-                super(a, period);
-            }
-
-            @Override
-            protected void onTick() {
+    		public TradingBehaviour(Agent a, long period) {
+    			super(a, period);
+    		}
+    	   protected void onTick() {
 
                 try {
 
@@ -171,6 +169,9 @@ public class BookTrader extends Agent {
                     dfd.addServices(sd);
 
                     DFAgentDescription[] traders = DFService.search(myAgent, dfd);
+                    
+                    int tradersCount = traders.length;
+                    int goalCount = myGoal.size();
 
                     ACLMessage buyBook = new ACLMessage(ACLMessage.CFP);
                     buyBook.setLanguage(codec.getName());
@@ -187,7 +188,11 @@ public class BookTrader extends Agent {
 
                     //vybereme knihu k nakupu
                     BookInfo bi = new BookInfo();
-                    bi.setBookName(myGoal.get(rnd.nextInt(myGoal.size())).getBook().getBookName());
+                    //
+                    
+                    // vybereme knihu podle priority
+                    int priority = (int) (myMoney / tradersCount + goalCount);
+                    bi.setBookName(myGoal.get(rnd.nextInt(priority) % goalCount).getBook().getBookName());
                     bis.add(bi);
 
                     SellMeBooks smb = new SellMeBooks();
@@ -206,17 +211,16 @@ public class BookTrader extends Agent {
             }
         }
 
-
-        //vlastni chovani, ktere se stara o opratreni knihy
+      //vlastni chovani, ktere se stara o opratreni knihy
         class ObtainBook extends ContractNetInitiator {
-
-            public ObtainBook(Agent a, ACLMessage cfp) {
-                super(a, cfp);
-            }
 
             Chosen c;  //musime si pamatovat, co jsme nabidli
             ArrayList<BookInfo> shouldReceive; //pamatujeme si, i co nabidl prodavajici nam
 
+
+            public ObtainBook(Agent a, ACLMessage cfp) {
+                super(a, cfp);
+            }
 
             //prodavajici nam posila nasi objednavku, zadame vlastni pozadavek na poslani platby
             @Override
@@ -335,10 +339,22 @@ public class BookTrader extends Agent {
                         ACLMessage acc = response.createReply();
                         acc.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                         accepted = true;
+                        
+                        DFAgentDescription dfd = new DFAgentDescription();
+
+                        DFAgentDescription[] traders;
+						traders = DFService.search(myAgent, dfd);
+						
+                        int goalCount = myGoal.size();
+
 
                         //vybereme nabidku
                         Chosen ch = new Chosen();
-                        ch.setOffer(canFulfill.get(rnd.nextInt(canFulfill.size())));
+                        
+                        int tradersCount = traders.length;
+                        //spocteme prioritu od boku (zapornou)
+                        int priority = (int) (myMoney / tradersCount - goalCount);
+                        ch.setOffer(canFulfill.get(rnd.nextInt(priority) % canFulfill.size()));
 
                         c=ch;
                         shouldReceive = cf.getWillSell();
@@ -350,14 +366,17 @@ public class BookTrader extends Agent {
                         e.printStackTrace();
                     } catch (OntologyException e) {
                         e.printStackTrace();
-                    }
+                    } catch (FIPAException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 
                 }
 
             }
         }
 
-
+        
         //chovani, ktere se stara o prodej knih
         class SellBook extends SSResponderDispatcher {
 
@@ -378,9 +397,20 @@ public class BookTrader extends Agent {
             }
 
             @Override
-            protected ACLMessage handleCfp(ACLMessage cfp) throws RefuseException, FailureException, NotUnderstoodException {
+            protected ACLMessage handleCfp(ACLMessage cfp) {
 
                 try {
+        			//najdeme si ostatni prodejce a pripravime zpravu
+                    ServiceDescription sd = new ServiceDescription();
+                    sd.setType("book-trader");
+                    DFAgentDescription dfd = new DFAgentDescription();
+                    dfd.addServices(sd);
+
+                    DFAgentDescription[] traders = DFService.search(myAgent, dfd);
+
+                    int tradersCount = traders.length;
+                    int goalCount = myGoal.size();
+                    
                     Action ac = (Action)getContentManager().extractContent(cfp);
 
                     SellMeBooks smb = (SellMeBooks)ac.getAction();
@@ -402,20 +432,22 @@ public class BookTrader extends Agent {
                             throw new RefuseException("");
                     }
 
-                    //vytvorime dve neodolatelne nabidky
-                    Offer o1 = new Offer();
-                    o1.setMoney(100);
+                    //spocteme prioritu od boku
+                    int priority = (int) (myMoney / tradersCount + goalCount);
 
+                    Offer[] os = new Offer[goalCount];
                     ArrayList<BookInfo> bis = new ArrayList<BookInfo>();
-                    bis.add(myGoal.get(rnd.nextInt(myGoal.size())).getBook());
-
-                    Offer o2 = new Offer();
-                    o2.setBooks(bis);
-                    o2.setMoney(20);
+                    for(int i = 0; i < os.length; ++i) {
+                    	
+                    	bis.add(myGoal.get(i).getBook());
+                    	
+                    	os[i].setMoney(myMoney / priority * (i + 1));
+                    }
 
                     ArrayList<Offer> offers = new ArrayList<Offer>();
-                    offers.add(o1);
-                    offers.add(o2);
+                    for(Offer o : os) {
+                    	offers.add(o);
+                    }
 
                     ChooseFrom cf = new ChooseFrom();
 
@@ -435,9 +467,18 @@ public class BookTrader extends Agent {
                     e.printStackTrace();
                 } catch (OntologyException e) {
                     e.printStackTrace();
-                }
+                } catch (FIPAException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 
-                throw new FailureException("");
+                try {
+					throw new FailureException("");
+				} catch (FailureException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return cfp;
             }
             //agent se rozhodl, ze nabidku prijme
             @Override
